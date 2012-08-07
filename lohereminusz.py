@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from flask import Flask, g
+from flask import Flask, g, render_template
 from sqlalchemy import create_engine
 
 DATABASE_NAME = 'pytest'
@@ -46,9 +46,25 @@ def hello_world():
 
 @app.route('/boards/<name>/', methods=['GET'])
 def get_board(name):
+    """
+    /boards/ handler
+    """
     board = g.db.execute('''select * from boards where name = %s''', str(name)).first()
-    posts = g.db.execute('''select * from posts where board_id = %s''', board["id"])
-    return ("<html><body>/%s/ - %s \n</br>%s" % (board["name"], board["title"], board["desc"])) + "\n</br>" + ' '.join([x["message"] + "</br>" for x in posts]) + "</body></html>"
+    board_names = [x[0] for x in g.db.execute('''select name from boards''').fetchall()]
+
+    op_posts = g.db.execute('''select * from posts where board_id = %s and parent_id = 0 order by stickied desc, bumped desc, date desc limit %s''',
+        int(board['id']),
+        int(board['threads_per_page'])).fetchall()
+
+    threads = []
+    for i in op_posts:
+        replies = g.db.execute('''select * from posts where board_id = %s and parent_id = %s order by date desc limit 5''',
+            int(board['id']),
+            int(i['id'])).fetchall()
+        threads.append((dict(i),replies[::-1]))
+
+    return render_template('board.html', board_name=board['name'], board_title=board['title'], board_names=board_names,
+        threads=threads, default_name=board['default_name'], force_default=board['force_default'])
 
 @app.route('/boards/<board_name>/<id>/', methods=['GET', 'POST'])
 def get_thread(board_name, id):

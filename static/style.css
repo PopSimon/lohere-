@@ -1,0 +1,19 @@
+div.header {
+    text-align: center;
+}
+div.thread {
+    background-color: #a5a5a5;
+}
+p.op {
+    border: 1px;
+    border-style: solid;
+    border-color: black;
+    font-weight: bold;
+    margin: 1px;
+    margin-bottom: 5px;
+}
+p.post {
+    margin: 1px;
+    background-color: #777777;
+    border-bottom: 2px black solid;
+}
