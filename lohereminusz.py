@@ -61,15 +61,15 @@ def get_board(name):
         replies = g.db.execute('''select * from posts where board_id = %s and parent_id = %s order by date desc limit 5''',
             int(board['id']),
             int(i['id'])).fetchall()
-        threads.append((dict(i),replies[::-1]))
+        threads.append({'op_post': dict(i), 'replies' :replies[::-1]})
 
-    return render_template('board.html', board_name=board['name'], board_title=board['title'], board_names=board_names,
+    return render_template('new_board.html', board_name=board['name'], board_title=board['title'], board_names=board_names,
         threads=threads, default_name=board['default_name'], force_default=board['force_default'])
 
-@app.route('/boards/<board_name>/<id>/', methods=['GET', 'POST'])
-def get_thread(board_name, id):
+@app.route('/boards/<board_name>/<thread_id>/', methods=['GET', 'POST'])
+def get_thread(board_name, thread_id):
     board = g.db.execute('''select * from boards where name = %s''', str(board_name)).first()
-    posts = g.db.execute('''select * from posts where board_id = %s AND (parent_id = %s OR id = %s)''', board["id"], id, id).fetchall()
+    posts = g.db.execute('''select * from posts where board_id = %s AND (parent_id = %s OR thread_id = %s)''', board["thread_id"], thread_id, thread_id).fetchall()
     return '</br>\n'.join([x["message"] for x in posts])
 
 if __name__ == '__main__':

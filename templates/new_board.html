@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}/{{ board_name }}/ - {{ board_title }}{% endblock %}
+{% block head %}
+{{ super() }}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}"/>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/noisy/1.1/jquery.noisy.min.js"></script>
+	<script type="text/javascript">
+		$(function() { $('body').noisy({
+		    'intensity' : 1,
+		    'size' : '300',
+		    'opacity' : 0.025,
+		    'fallback' : '',
+		    'monochrome' : true
+		}).css('background-color', '#121212');});
+	</script>
+{% endblock %}
+{% block content %}
+	<div id="container">
+		<div id="header">
+	    	{% if banner_image %}<img src="{{ banner_image }}" alt="Board banner">{% endif %}
+	    	<span style="font-size: xx-large;">/{{ board_name }}/ - {{ board_title }}</span><br>
+	    	insert new thread creator here
+		</div>
+		<hr size="3">
+		<div> <!-- trods -->
+	{% for thread in threads %}
+			<div class="thread">
+	    		<p class="op">{% if not thread['op_post'].name or force_default %}{{ default_name }}{% else %}{{ thread['op_post'].name }}{% endif %} on {{ thread['op_post'].date }} [ no. <a href="/boards/{{ board_name }}/{{ thread['op_post'].id}}/">{{ thread['op_post'].id}}</a>{% if thread['op_post'].stickied %}<span style="color: red; font-weight: bold;"> -STICKIED-</span>{% endif %} ]<br>
+	    			{{ thread['op_post'].message }}</p>
+	    {% for post in thread['replies'] %}
+				<p class="post">>{% if not post.name or force_default %}{{ default_name}}{% else %}{{ post.name }}{% endif %} on {{ post.date }} [ no. {{ post.id }} ]<br>{{ post.message }}</p>
+	{% endfor %}		</div><br>{% endfor %}
+		</div>
+	</div>
+{% endblock %}
