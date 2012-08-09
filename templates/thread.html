@@ -1,10 +1,28 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<head>
-    <title></title>
-</head>
-<body>
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}/{{ board_name }}/ - {{ board_title }} - Thread no. {{ thread['op_post'].id }}{% endblock %}
+{% block head %}
+{{ super() }}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}"/>
+	<!--<link href='http://fonts.googleapis.com/css?family=Open+Sans|Droid+Sans' rel='stylesheet' type='text/css'>-->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/noisy/1.1/jquery.noisy.min.js"></script>
+	<script type="text/javascript">
+		$(function() { $('body').noisy({
+		    'intensity' : 1,
+		    'size' : '300',
+		    'opacity' : 0.025,
+		    'fallback' : '',
+		    'monochrome' : true
+		}).css('background-color', '#121212');});
+	</script>
+{% endblock %}
+{% block content %}
+<div class="thread">
+	<a name="{{ thread['op_post'].id }}"><p class="op">{% if not thread['op_post'].name or force_default %}{{ default_name }}{% else %}{{ thread['op_post'].name }}{% endif %} on {{ thread['op_post'].date }} [ no. <a href="/boards/{{ board_name }}/{{ thread['op_post'].id}}/">{{ thread['op_post'].id}}</a>{% if thread['op_post'].stickied %}<span style="color: red; font-weight: bold;"> -STICKIED-</span>{% endif %} ]<br>
+	    			<span class="post">{{ thread['op_post'].message }}</span></p></a>
+	    {% for post in thread['replies'] %}
+				<a name="{{ post.id }}"><p class="post"{% if loop.last %} style="margin-bottom: 14px;"{% endif %}>{% if not post.name or force_default %}{{ default_name}}{% else %}{{ post.name }}{% endif %} on {{ post.date }} [ <a href="{{ url_for('get_thread', board_name=board_name, thread_id=thread['op_post'].id) }}#{{ post.id }}">no.</a> {{ post.id }} ]<br>
+					<span class="post">{{ post.message }}</span></p></a>
+	{% endfor %}
+</div>
+{% endblock %}

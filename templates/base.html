@@ -10,9 +10,26 @@
 		<div>
 			[{% for board in board_names %} <a href="/boards/{{ board }}/">{{ board }}</a> {%if not loop.last%}/{% endif %}{% endfor %} ]
 		</div>
+		<div id="container">
+			<div id="header">
+		    	{% if banner_image %}<img src="{{ banner_image }}" alt="Board banner">{% endif %}
+		    	<span style="font-size: xx-large;">/{{ board_name }}/ - {{ board_title }}</span><br>
+		    	{% from "formtools.html" import render_field %}
+				<form method="post" action=".">
+				  <dl>
+				    {{ render_field(form.name) }}
+				    {{ render_field(form.email) }}
+				    {{ render_field(form.subject) }}
+				    {{ render_field(form.message) }}
+				  </dl>
+				  <p><input type="submit" value="POSZT">
+				</form>
+			</div>
+			<br />
 		{% block content %}
 		
 		{% endblock %}
+		</div>
 		<br />
 		lohereminusz 0.1 xd
 	</body>

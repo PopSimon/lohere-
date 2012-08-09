@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from flask import Flask, g, render_template
+from flask import Flask, g, render_template, url_for, redirect
 from sqlalchemy import create_engine
+from wtforms import Form, StringField, validators, TextAreaField
+from flask.globals import request
+import time, datetime
 
 DATABASE_NAME = 'pytest'
 DEBUG = True
@@ -44,11 +47,18 @@ def teardown_request(exception):
 def hello_world():
     return "ZIAZDOG"
 
+class PostForm(Form):
+    name = StringField('Namae wa')
+    email = StringField('Ímél cím')
+    subject = StringField('Subject')
+    message = TextAreaField('Message', [validators.Required()])
+
 @app.route('/boards/<name>/', methods=['GET'])
 def get_board(name):
     """
     /boards/ handler
     """
+    form = PostForm(request.form)
     board = g.db.execute('''select * from boards where name = %s''', str(name)).first()
     board_names = [x[0] for x in g.db.execute('''select name from boards''').fetchall()]
 
@@ -63,14 +73,22 @@ def get_board(name):
             int(i['id'])).fetchall()
         threads.append({'op_post': dict(i), 'replies' :replies[::-1]})
 
-    return render_template('new_board.html', board_name=board['name'], board_title=board['title'], board_names=board_names,
-        threads=threads, default_name=board['default_name'], force_default=board['force_default'])
+    return render_template('board.html', board_name=board['name'], board_title=board['title'], board_names=board_names,
+        threads=threads, default_name=board['default_name'], force_default=board['force_default'], form=form)
 
 @app.route('/boards/<board_name>/<thread_id>/', methods=['GET', 'POST'])
 def get_thread(board_name, thread_id):
+    form = PostForm(request.form)
+    if request.method == 'POST' and form.validate():
+        board_id = g.db.execute('''select id from boards where name = %s''', board_name).first()[0]
+        g.db.execute('''insert into posts (board_id, parent_id, name, subject, message, date) values (%s, %s, %s, %s, %s, %s)''', board_id, int(thread_id), form.name.data, form.subject.data, form.message.data, datetime.datetime.now())
+        
     board = g.db.execute('''select * from boards where name = %s''', str(board_name)).first()
-    posts = g.db.execute('''select * from posts where board_id = %s AND (parent_id = %s OR thread_id = %s)''', board["thread_id"], thread_id, thread_id).fetchall()
-    return '</br>\n'.join([x["message"] for x in posts])
+    posts = g.db.execute('''select * from posts where board_id = %s AND (parent_id = %s OR (parent_id = 0 AND id = %s)) order by date''', board['id'], thread_id, thread_id).fetchall()
+    thread = { 'op_post': posts[0], 'replies': posts[1:] }
+    board_names = [x[0] for x in g.db.execute('''select name from boards''').fetchall()]
+    return render_template('thread.html', board_name=board['name'], board_title=board['title'], board_names=board_names, 
+                           thread=thread, default_name=board['default_name'], force_default=board['force_default'], form=form)
 
 if __name__ == '__main__':
     app.run()
