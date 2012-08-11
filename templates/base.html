@@ -15,12 +15,14 @@
 		    	{% if banner_image %}<img src="{{ banner_image }}" alt="Board banner">{% endif %}
 		    	<span style="font-size: xx-large;">/{{ board_name }}/ - {{ board_title }}</span><br>
 		    	{% from "formtools.html" import render_field %}
-				<form method="post" action=".">
+				<form method="post" action="." enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
 				  <dl>
 				    {{ render_field(form.name) }}
 				    {{ render_field(form.email) }}
 				    {{ render_field(form.subject) }}
 				    {{ render_field(form.message) }}
+				    {{ render_field(form.file) }}
 				  </dl>
 				  <p><input type="submit" value="POSZT">
 				</form>
