@@ -82,8 +82,6 @@ class RequiredIfNot(Required):
         other_field = form._fields.get(self.other_field_name)
         if other_field is None:
             raise Exception('no field named "%s" in form' % self.other_field_name)
-        #app.logger.warning(str(other_field) + ' ' + str(type(other_field) == FileField) + ' ' + str(bool(request.files[other_field.name])) + ' ' + str(request.files[other_field.name]))
-        app.logger.warning(str(not bool(other_field.data)) + ' ' + str(((type(other_field) == FileField) and bool(request.files[other_field.name]))))
         if not bool(other_field.data) and not ((type(other_field) == FileField) and bool(request.files[other_field.name])):
             super(RequiredIfNot, self).__call__(form, field)
 
@@ -180,7 +178,8 @@ def get_board(name):
             'op_post': op_post,
             'replies': replies[::-1],
             'num_unshown_posts': g.db.execute('''select COUNT(*)-5 from posts where board_id = %s and parent_id = %s order by date asc''', int(board['id']), int(i['id'])).first()[0],
-            'num_unshown_files': g.db.execute('''select COUNT(*)-5 from posts where board_id = %s and parent_id = %s and file_id != 0 order by date asc''', int(board['id']), int(i['id'])).first()[0]
+            # TODO: fix, inner join vagy valami faszság :(
+            'num_unshown_files': g.db.execute('''select COUNT(*)-(select COUNT(*) from posts where board_id = %s and parent_id = %s and file_id != 0 order by date limit 5) from posts where board_id = %s and parent_id = %s and file_id != 0 order by date asc''', int(board['id']), int(i['id']), int(board['id']), int(i['id'])).first()[0]
         })
 
     return render_template('board.html', board_name=board['name'], board_title=board['title'], board_names=board_names,
