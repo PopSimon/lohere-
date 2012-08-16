@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# deps: flask (werkzeug, jinja2), python-mysql, flask-wtf, flask-uploads, postmarkup (for bbcode)
+# TODO: better security, admin panel, quotes/links, passwords/post deletion
+
+PYGMENTS_ENABLED = False
+
 from flask import Flask, g, render_template, url_for, redirect
 from flask.ext.uploads import UploadSet, IMAGES, UploadNotAllowed
 #from flask.ext.wtf.file import file_allowed, file_required
@@ -15,6 +20,12 @@ import time, datetime, flask_wtf, os
 from werkzeug.utils import secure_filename
 from PIL import Image
 import helpers
+from postmarkup import render_bbcode
+import postmarkup
+if PYGMENTS_ENABLED:
+    import pygments
+
+markup_engine = postmarkup.create(exclude=['img'], use_pygments=PYGMENTS_ENABLED)
 
 DATABASE_NAME = 'pytest'
 DEBUG = True
@@ -115,6 +126,7 @@ def get_board(name):
             # this should hopefully only always be one, but delete as many as necessary to adjust to max threads
             for i in range(nr_threads - max_threads):
                 helpers.delete_thread(board_id, thread_ids[i])
+        # TODO: ezt a részt lehetne egy külön metódusba átvinni
         file = request.files['file']
         file_id = None
         if file:
@@ -143,7 +155,7 @@ def get_board(name):
         if form.email.data == app.config['NOKO_STRING']: # or form.email.data == app.config['SAGE_STRING']:
             actual_email = None
         date_now = datetime.datetime.now()
-        g.db.execute('''insert into posts (board_id, parent_id, name, subject, message, date, email) values (%s, 0, %s, %s, %s, %s, %s)''', str(board_id), form.name.data, form.subject.data, form.message.data, date_now, actual_email)
+        g.db.execute('''insert into posts (board_id, parent_id, name, subject, message, date, email) values (%s, 0, %s, %s, %s, %s, %s)''', str(board_id), form.name.data, form.subject.data, markup_engine(form.message.data), date_now, actual_email)
         post_id = g.db.execute('''select LAST_INSERT_ID()''').first()[0]
 
         if file:
@@ -233,8 +245,7 @@ def get_thread(board_name, thread_id):
         actual_email = form.email.data
         if form.email.data == app.config['NOKO_STRING']: # or form.email.data == app.config['SAGE_STRING']:
             actual_email = ''
-        g.db.execute('''insert into posts (board_id, parent_id, name, subject, message, date, email) values (%s, %s, %s, %s, %s, %s, %s)''', str(board_id), str(thread_id), form.name.data, form.subject.data, form.message.data, date_now, actual_email)
-
+        g.db.execute('''insert into posts (board_id, parent_id, name, subject, message, date, email) values (%s, %s, %s, %s, %s, %s, %s)''', str(board_id), str(thread_id), form.name.data, form.subject.data, markup_engine(form.message.data), date_now, actual_email)
 
         if file:
             post_id = g.db.execute('''select LAST_INSERT_ID()''').first()[0]
