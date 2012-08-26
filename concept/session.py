@@ -8,23 +8,23 @@ import SessionRepo
 #
 
 class Fingerprint:
-	'''
-		A request információi alapján az userről összeállított ujjlenyomat.
-	'''
-	def __init__(self, address, ua_string):
-		# TODO
-		self.address = address
-		self.ua_string = ua_string
-		
+    '''
+        A request információi alapján az userről összeállított ujjlenyomat.
+    '''
+    def __init__(self, address, ua_string):
+        # TODO
+        self.address = address
+        self.ua_string = ua_string
+        
 def fingerprint_from_req(req):
-	# TODO
-	return Fingerprint(IPAddress(req.ip), req.ua_string)
+    # TODO
+    return Fingerprint(IPAddress(req.ip), req.ua_string)
 
 def fingerprint_from_db(db_rec):
-	# TODO
-	return Fingerprint(IPAddress(db_rec.ip), db_rec.ua_string)
+    # TODO
+    return Fingerprint(IPAddress(db_rec.ip), db_rec.ua_string)
 
-	
+    
 class SID:
     '''
         Biztonságos session id, autentikált sessionökhöz.
@@ -42,7 +42,7 @@ def generate_sid():
         Használata: pl. amikor egy user bejelentkezik és új AuthSession-t kap
     '''
     raise NotImplemented # TODO
-	
+    
 class FakeSID(SID):
     '''
         Placeholder session id.
@@ -64,7 +64,7 @@ def generate_fsid(fingerprint):
     raise NotImplemented # TODO
 
 class UserData:
-	def __init__(self, skin, alias, alias_control, email, sage, spoiler, noko):
+    def __init__(self, skin, alias, alias_control, email, sage, spoiler, noko):
         # Skin
         self.skin = skin or None # None esetén az adott view (board) defaultját használjuk majd
         # Form
@@ -74,40 +74,40 @@ class UserData:
         self.sage = sage or False
         self.spoiler = spoiler or False
         self.noko = noko or False
-	
+    
 class SessionData(UserData):
     '''
         Az adott sessionhöz köthető, a megjelenítéshez kapcsolódó különböző információk
-		A válaszban sütiben visszaküldjük.
+        A válaszban sütiben visszaküldjük.
     '''
-	def __init__(self, form, cookie, user):
-		if user:
-			skin = user.data["skin"]
-			alias = user.data["alias"]
-			alias_control = user.data["alias_control"]
-			email = user.data["email"]
-			sage = user.data["sage"]
-			spoiler = user.data["spoiler"]
-			noko = user.data["noko"]
-		if cookie: # a sütiben érkező mezőkből feltöltés
-			skin = cookie["skin"] or skin
-			alias = cookie["alias"] or alias
-			alias_control = cookie["alias_control"] or alias_control
-			email = cookie["email"] or email
-			sage = cookie["sage"] or sage
-			spoiler = cookie["spoiler"] or spoiler
-			noko = cookie["noko"] or noko
-		if form: # felülírjuk a form-ban beérkező adatokkal az eddigit, ha post-ol a júzer éppen
-			skin = form["skin"] or skin
-			alias = form["alias"] or alias
-			alias_control = form["alias_control"] or alias_control
-			email = form["email"] or email
-			sage = form["sage"] or sage
-			spoiler = form["spoiler"] or spoiler
-			noko = form["noko"] or noko
-		super(UserData, self).__init__(skin, alias, alias_control, email, sage, spoiler, noko)
+    def __init__(self, form, cookie, user):
+        if user:
+            skin = user.data["skin"]
+            alias = user.data["alias"]
+            alias_control = user.data["alias_control"]
+            email = user.data["email"]
+            sage = user.data["sage"]
+            spoiler = user.data["spoiler"]
+            noko = user.data["noko"]
+        if cookie: # a sütiben érkező mezőkből feltöltés
+            skin = cookie["skin"] or skin
+            alias = cookie["alias"] or alias
+            alias_control = cookie["alias_control"] or alias_control
+            email = cookie["email"] or email
+            sage = cookie["sage"] or sage
+            spoiler = cookie["spoiler"] or spoiler
+            noko = cookie["noko"] or noko
+        if form: # felülírjuk a form-ban beérkező adatokkal az eddigit, ha post-ol a júzer éppen
+            skin = form["skin"] or skin
+            alias = form["alias"] or alias
+            alias_control = form["alias_control"] or alias_control
+            email = form["email"] or email
+            sage = form["sage"] or sage
+            spoiler = form["spoiler"] or spoiler
+            noko = form["noko"] or noko
+        super(UserData, self).__init__(skin, alias, alias_control, email, sage, spoiler, noko)
 
-	
+    
 class Session:
     '''
         Session alaposztály
@@ -122,7 +122,7 @@ class Session:
         self.fingerprint = fingerprint
         self.sid = sid
         self.user = user
-		self.bans = bans
+        self.bans = bans
         self.data = data
 
 class AnonymousSession(Session):
@@ -159,25 +159,25 @@ class AuthSession(Session):
 def generate_session(req):
     fprint = fingerprint_from_req(req)
     cookies = req.cookies
-	
-	# ip-banok ellenőrzése
-	bans = BanTable.get(address)
     
-	# incoming SID a sütikből
-	if "session" in cookies:
-		sid = cookies["session"].sid
-		SessionRepo.check(sid, fprint) # incoming SID ellenőrzése - a session táblából, esetleg ip, ua_string ellenőrzése?
+    # ip-banok ellenőrzése
+    bans = BanTable.get(address)
     
-	# data
-	data = SessionData(form, data_cookie, user)
-		
-	if address in ProxyTable: # ProxyTable-ben __contains__ felülírva, hogy ip-rangeket is megtalálja
-		return ProxySession(address, bans, data)
+    # incoming SID a sütikből
+    if "session" in cookies:
+        sid = cookies["session"].sid
+        SessionRepo.check(sid, fprint) # incoming SID ellenőrzése - a session táblából, esetleg ip, ua_string ellenőrzése?
+    
+    # data
+    data = SessionData(form, data_cookie, user)
+        
+    if address in ProxyTable: # ProxyTable-ben __contains__ felülírva, hogy ip-rangeket is megtalálja
+        return ProxySession(address, bans, data)
     else if sid:
         return AuthSession(address, sid, user, bans, data)
     # ellenben generált SID
     else if cookie:
-		return AnonymousSession(address, bans, data)
-	else:
-		return NoCookieSession(address, bans, data)
-		
+        return AnonymousSession(address, bans, data)
+    else:
+        return NoCookieSession(address, bans, data)
+        
